@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Check In</title>
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+  <div class="center-screen">
+    <div class="card">
+      <div class="topbar">
+        <h1 id="greeting">Check In</h1>
+        <button class="link-btn" id="logout-btn">Log out</button>
+      </div>
+
+      <div id="reader"></div>
+
+      <div id="message"></div>
+
+      <details style="margin-top: 16px;">
+        <summary style="cursor: pointer; color: #94a3b8; font-size: 0.85rem;">
+          Camera not working? Enter code manually
+        </summary>
+        <form id="manual-form">
+          <label for="manual-token">QR code text</label>
+          <input type="text" id="manual-token" />
+          <button type="submit">Submit</button>
+        </form>
+      </details>
+    </div>
+  </div>
+
+  <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+  <script src="js/api.js"></script>
+  <script src="js/scan.js"></script>
+</body>
+</html>

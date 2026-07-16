@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Attendance — Admin Screen</title>
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+  <div class="admin-wrap">
+    <div class="topbar">
+      <h1 id="greeting">Admin</h1>
+      <div>
+        <a href="history.html" class="link-btn" style="margin-right: 16px;">Attendance history</a>
+        <a href="summary.html" class="link-btn" style="margin-right: 16px;">Summary</a>
+        <button class="link-btn" id="logout-btn">Log out</button>
+      </div>
+    </div>
+
+    <div class="qr-panel">
+      <img id="qr-image" alt="Scan to check in" />
+      <div class="countdown" id="qr-status"></div>
+      <div class="countdown" id="qr-link" style="word-break: break-all; font-size: 0.75rem;"></div>
+      <button id="regenerate-btn" style="max-width: 260px; margin: 16px auto 0;">
+        Regenerate QR (if leaked)
+      </button>
+    </div>
+
+    <h2>Pending Staff Approvals</h2>
+    <div class="table-scroll">
+      <table>
+        <thead>
+          <tr>
+            <th>Name</th>
+            <th>Email</th>
+            <th>Phone</th>
+            <th>Action</th>
+          </tr>
+        </thead>
+        <tbody id="pending-body">
+          <tr><td colspan="4">Loading...</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h2>Today's Attendance</h2>
+    <div class="table-scroll">
+      <table>
+        <thead>
+          <tr>
+            <th>Name</th>
+            <th>Email</th>
+            <th>Check-in</th>
+            <th>Status</th>
+          </tr>
+        </thead>
+        <tbody id="attendance-body">
+          <tr><td colspan="4">Loading...</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <script src="js/api.js"></script>
+  <script src="js/admin.js"></script>
+</body>
+</html>

@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Staff Login</title>
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+  <div class="center-screen">
+    <div class="card">
+      <h1>Staff Login</h1>
+      <form id="login-form">
+        <label for="identifier">Email or phone number</label>
+        <input type="text" id="identifier" required autocomplete="username" />
+
+        <label for="password">Password</label>
+        <div class="password-field">
+          <input type="password" id="password" required autocomplete="current-password" />
+          <button type="button" class="toggle-password" data-target="password" aria-label="Show password">Show</button>
+        </div>
+
+        <button type="submit">Log in</button>
+      </form>
+      <div id="message"></div>
+      <p style="margin-top: 16px; text-align: center;">
+        <a href="signup.html" style="color: #94a3b8;">New here? Create an account</a>
+      </p>
+    </div>
+  </div>
+
+  <script src="js/api.js"></script>
+  <script src="js/password-toggle.js"></script>
+  <script src="js/login.js"></script>
+</body>
+</html>
