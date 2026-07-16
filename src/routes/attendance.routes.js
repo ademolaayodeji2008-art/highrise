@@ -16,7 +16,7 @@ router.post('/checkin', requireAuth, asyncHandler(async (req, res) => {
   }
 
   try {
-    verifyQrToken(qrToken);
+    await verifyQrToken(qrToken);
   } catch (err) {
     return res.status(400).json({ message: 'Invalid QR code' });
   }

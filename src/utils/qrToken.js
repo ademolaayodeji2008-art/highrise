@@ -1,32 +1,47 @@
 const jwt = require('jsonwebtoken');
+const QrToken = require('../models/QrToken');
 
-// The QR code is static: we generate one token and keep serving the same
-// one until an admin explicitly regenerates it (e.g. after a leaked screenshot).
-let currentToken = null;
+// In-memory read cache in front of the DB — checkin is the hottest path in
+// the app and shouldn't hit MongoDB on every scan just to re-verify the token.
+// The DB row is the source of truth so the token survives server restarts.
+let cachedToken = null;
 
-function generateToken() {
-  currentToken = jwt.sign(
+function signToken() {
+  return jwt.sign(
     { locationId: process.env.LOCATION_ID || 'default', issuedAt: Date.now() },
     process.env.QR_SECRET
   );
-  return currentToken;
 }
 
-function getCurrentToken() {
-  if (!currentToken) generateToken();
-  return currentToken;
+async function getCurrentToken() {
+  if (cachedToken) return cachedToken;
+
+  let doc = await QrToken.findById('singleton');
+  if (!doc) {
+    doc = await QrToken.findByIdAndUpdate(
+      'singleton',
+      { $setOnInsert: { token: signToken() } },
+      { upsert: true, new: true }
+    );
+  }
+  cachedToken = doc.token;
+  return cachedToken;
 }
 
-function regenerateToken() {
-  return generateToken();
+async function regenerateToken() {
+  const token = signToken();
+  await QrToken.findByIdAndUpdate('singleton', { token }, { upsert: true });
+  cachedToken = token;
+  return token;
 }
 
 // Signature validity alone isn't enough: since tokens never expire, a
 // signature-only check would let old screenshots keep working forever,
 // even after an admin regenerates the QR. It must also match the live token.
-function verifyQrToken(token) {
+async function verifyQrToken(token) {
   jwt.verify(token, process.env.QR_SECRET);
-  if (token !== getCurrentToken()) {
+  const current = await getCurrentToken();
+  if (token !== current) {
     throw new Error('QR token has been superseded');
   }
 }

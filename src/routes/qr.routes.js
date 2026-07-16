@@ -15,7 +15,7 @@ function checkinUrl(req, token) {
 // Static QR: admin screen loads this once (no polling needed) and re-fetches
 // only if the admin explicitly regenerates the code.
 router.get('/current', requireAuth, requireAdmin, asyncHandler(async (req, res) => {
-  const token = getCurrentToken();
+  const token = await getCurrentToken();
   const url = checkinUrl(req, token);
   const qrImageUrl = await QRCode.toDataURL(url);
   res.json({ qrImageUrl, url });
@@ -23,7 +23,7 @@ router.get('/current', requireAuth, requireAdmin, asyncHandler(async (req, res) 
 
 // Invalidate the current QR (e.g. a screenshot leaked) and issue a new one.
 router.post('/regenerate', requireAuth, requireAdmin, asyncHandler(async (req, res) => {
-  const token = regenerateToken();
+  const token = await regenerateToken();
   const url = checkinUrl(req, token);
   const qrImageUrl = await QRCode.toDataURL(url);
   res.json({ qrImageUrl, url });
