@@ -91,23 +91,25 @@ async function refreshAttendance() {
   try {
     const data = await apiFetch('/attendance/today');
     if (!data.records.length) {
-      attendanceBody.innerHTML = '<tr><td colspan="4">No check-ins yet today.</td></tr>';
+      attendanceBody.innerHTML = '<tr><td colspan="5">No check-ins yet today.</td></tr>';
       return;
     }
     attendanceBody.innerHTML = data.records
       .map((r) => {
         const staff = r.staffId || {};
-        const time = r.checkInTime ? new Date(r.checkInTime).toLocaleTimeString() : '-';
+        const checkIn = r.checkInTime ? new Date(r.checkInTime).toLocaleTimeString() : '-';
+        const checkOut = r.checkOutTime ? new Date(r.checkOutTime).toLocaleTimeString() : '-';
         return `<tr>
           <td>${staff.name || 'Unknown'}</td>
           <td>${staff.email || '-'}</td>
-          <td>${time}</td>
+          <td>${checkIn}</td>
+          <td>${checkOut}</td>
           <td>${statusBadge(r.status)}</td>
         </tr>`;
       })
       .join('');
   } catch (err) {
-    attendanceBody.innerHTML = `<tr><td colspan="4">${err.message}</td></tr>`;
+    attendanceBody.innerHTML = `<tr><td colspan="5">${err.message}</td></tr>`;
   }
 }
 

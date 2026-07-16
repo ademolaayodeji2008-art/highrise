@@ -1,5 +1,6 @@
 const express = require('express');
 const jwt = require('jsonwebtoken');
+const crypto = require('crypto');
 const Staff = require('../models/Staff');
 const { requireAuth, requireAdmin } = require('../middleware/auth');
 const { loginLimiter, signupLimiter } = require('../middleware/rateLimit');
@@ -85,6 +86,28 @@ router.post('/register', requireAuth, requireAdmin, asyncHandler(async (req, res
   });
 
   res.status(201).json({ staff: staff.toSafeObject() });
+}));
+
+// Admin-only: list all active staff (for the "manage staff" screen).
+router.get('/staff', requireAuth, requireAdmin, asyncHandler(async (req, res) => {
+  const staff = await Staff.find({ active: true }).select('-password').sort({ name: 1 });
+  res.json({ staff });
+}));
+
+// Admin-only: reset a staff member's password to a random temporary one.
+// There's no self-service reset flow (no email/SMS service configured) — the
+// admin relays this temporary password to the staff member directly.
+router.post('/:id/reset-password', requireAuth, requireAdmin, asyncHandler(async (req, res) => {
+  const staff = await Staff.findById(req.params.id);
+  if (!staff) {
+    return res.status(404).json({ message: 'Staff account not found' });
+  }
+
+  const temporaryPassword = crypto.randomBytes(6).toString('base64url');
+  staff.password = temporaryPassword;
+  await staff.save();
+
+  res.json({ message: 'Password reset', temporaryPassword, staff: staff.toSafeObject() });
 }));
 
 // Admin-only: list accounts awaiting approval.

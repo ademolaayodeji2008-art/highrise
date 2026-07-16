@@ -22,7 +22,7 @@ function statusBadge(status) {
 }
 
 async function loadHistory() {
-  historyBody.innerHTML = '<tr><td colspan="5">Loading...</td></tr>';
+  historyBody.innerHTML = '<tr><td colspan="6">Loading...</td></tr>';
   const params = new URLSearchParams();
   if (fromInput.value) params.set('from', fromInput.value);
   if (toInput.value) params.set('to', toInput.value);
@@ -31,25 +31,27 @@ async function loadHistory() {
     const data = await apiFetch(`/attendance/report?${params.toString()}`);
     currentRecords = data.records;
     if (!data.records.length) {
-      historyBody.innerHTML = '<tr><td colspan="5">No records in this range.</td></tr>';
+      historyBody.innerHTML = '<tr><td colspan="6">No records in this range.</td></tr>';
       return;
     }
     historyBody.innerHTML = data.records
       .map((r) => {
         const staff = r.staffId || {};
-        const time = r.checkInTime ? new Date(r.checkInTime).toLocaleTimeString() : '-';
+        const checkIn = r.checkInTime ? new Date(r.checkInTime).toLocaleTimeString() : '-';
+        const checkOut = r.checkOutTime ? new Date(r.checkOutTime).toLocaleTimeString() : '-';
         return `<tr>
           <td>${r.date}</td>
           <td>${staff.name || 'Unknown'}</td>
           <td>${staff.email || '-'}</td>
-          <td>${time}</td>
+          <td>${checkIn}</td>
+          <td>${checkOut}</td>
           <td>${statusBadge(r.status)}</td>
         </tr>`;
       })
       .join('');
   } catch (err) {
     currentRecords = [];
-    historyBody.innerHTML = `<tr><td colspan="5">${err.message}</td></tr>`;
+    historyBody.innerHTML = `<tr><td colspan="6">${err.message}</td></tr>`;
   }
 }
 
@@ -66,11 +68,12 @@ exportBtn.addEventListener('click', () => {
     alert('No records to export for this range.');
     return;
   }
-  const header = ['Date', 'Name', 'Email', 'Check-in', 'Status'];
+  const header = ['Date', 'Name', 'Email', 'Check-in', 'Check-out', 'Status'];
   const rows = currentRecords.map((r) => {
     const staff = r.staffId || {};
-    const time = r.checkInTime ? new Date(r.checkInTime).toLocaleTimeString() : '';
-    return [r.date, staff.name || 'Unknown', staff.email || '', time, r.status];
+    const checkIn = r.checkInTime ? new Date(r.checkInTime).toLocaleTimeString() : '';
+    const checkOut = r.checkOutTime ? new Date(r.checkOutTime).toLocaleTimeString() : '';
+    return [r.date, staff.name || 'Unknown', staff.email || '', checkIn, checkOut, r.status];
   });
   const csv = [header, ...rows].map((row) => row.map(csvEscape).join(',')).join('\n');
 
