@@ -1,5 +1,6 @@
 const form = document.getElementById('signup-form');
 const messageEl = document.getElementById('message');
+const submitBtn = form.querySelector('button[type="submit"]');
 
 const params = new URLSearchParams(window.location.search);
 if (params.get('email')) document.getElementById('email').value = params.get('email');
@@ -21,6 +22,9 @@ form.addEventListener('submit', async (e) => {
   const phone = document.getElementById('phone').value.trim();
   const password = document.getElementById('password').value;
 
+  submitBtn.disabled = true;
+  submitBtn.textContent = 'Signing up…';
+
   try {
     const data = await apiFetch('/auth/signup', {
       method: 'POST',
@@ -32,5 +36,8 @@ form.addEventListener('submit', async (e) => {
   } catch (err) {
     messageEl.textContent = err.message;
     messageEl.className = 'message error';
+  } finally {
+    submitBtn.disabled = false;
+    submitBtn.textContent = 'Sign up';
   }
 });

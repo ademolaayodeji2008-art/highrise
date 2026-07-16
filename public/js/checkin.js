@@ -57,23 +57,49 @@ async function flushQueue() {
   }
 }
 
+// Checkout availability is decided by actual server state, not by whether a
+// fresh scan just succeeded — so a stale/invalid QR in a bookmarked link
+// doesn't hide checkout for someone who's genuinely still checked in.
+async function refreshCheckoutButton() {
+  try {
+    const data = await apiFetch('/attendance/me/today');
+    checkoutBtn.style.display = data.attendance && !data.attendance.checkOutTime ? 'block' : 'none';
+    return data.attendance;
+  } catch (err) {
+    return null;
+  }
+}
+
 const params = new URLSearchParams(window.location.search);
 const qrToken = params.get('token');
 
-if (Auth.token()) {
+if (!Auth.token()) {
+  // Not logged in — send to login, then bounce straight back here (with the token, if any).
+  const returnTo = encodeURIComponent(qrToken ? `checkin.html?token=${qrToken}` : 'checkin.html');
+  window.location.href = `login.html?next=${returnTo}`;
+} else {
   flushQueue();
+  if (qrToken) {
+    runCheckin();
+  } else {
+    showTodayStatus();
+  }
 }
 window.addEventListener('online', flushQueue);
 
-if (!qrToken) {
-  headingEl.textContent = 'Invalid link';
-  showMessage('This link is missing a check-in code. Ask the office to reshow the QR code.', 'error');
-} else if (!Auth.token()) {
-  // Not logged in — send to login, then bounce straight back here with the same token.
-  const returnTo = encodeURIComponent(`checkin.html?token=${qrToken}`);
-  window.location.href = `login.html?next=${returnTo}`;
-} else {
-  runCheckin();
+async function showTodayStatus() {
+  headingEl.textContent = 'Your attendance today';
+  const attendance = await refreshCheckoutButton();
+  if (!attendance) {
+    showMessage("You haven't checked in yet today — scan the QR code at the entrance.", 'info');
+  } else if (attendance.checkOutTime) {
+    showMessage(
+      `Checked in at ${new Date(attendance.checkInTime).toLocaleTimeString()}, checked out at ${new Date(attendance.checkOutTime).toLocaleTimeString()}.`,
+      'success'
+    );
+  } else {
+    showMessage(`Checked in at ${new Date(attendance.checkInTime).toLocaleTimeString()}.`, 'success');
+  }
 }
 
 function getPosition() {
@@ -98,6 +124,7 @@ async function runCheckin() {
   } catch (err) {
     headingEl.textContent = 'Check-in failed';
     showMessage(err.message, 'error');
+    await refreshCheckoutButton();
     return;
   }
 
@@ -108,9 +135,7 @@ async function runCheckin() {
     });
     headingEl.textContent = 'You\'re checked in';
     showMessage(data.message, 'success');
-    if (!data.attendance.checkOutTime) {
-      checkoutBtn.style.display = 'block';
-    }
+    checkoutBtn.style.display = data.attendance.checkOutTime ? 'none' : 'block';
   } catch (err) {
     if (err.status === undefined) {
       queueCheckin({ qrToken, lat: coords.latitude, lng: coords.longitude });
@@ -119,6 +144,9 @@ async function runCheckin() {
     } else {
       headingEl.textContent = 'Check-in failed';
       showMessage(err.message, 'error');
+      // Even though this scan failed (e.g. a stale/regenerated QR), the staff
+      // may already be checked in from earlier — still offer checkout if so.
+      await refreshCheckoutButton();
     }
   }
 }

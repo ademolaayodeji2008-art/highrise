@@ -92,6 +92,14 @@ router.post('/checkout', requireAuth, asyncHandler(async (req, res) => {
   res.json({ message: `Checked out at ${record.checkOutTime.toLocaleTimeString()}`, attendance: record });
 }));
 
+// The logged-in staff's own attendance record for today, if any — lets the
+// checkout button appear regardless of whether a fresh QR scan just succeeded.
+router.get('/me/today', requireAuth, asyncHandler(async (req, res) => {
+  const date = todayString();
+  const attendance = await Attendance.findOne({ staffId: req.staff._id, date });
+  res.json({ attendance });
+}));
+
 router.get('/today', requireAuth, requireAdmin, asyncHandler(async (req, res) => {
   const date = todayString();
   const records = await Attendance.find({ date }).populate('staffId', 'name email role');

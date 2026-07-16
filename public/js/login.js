@@ -1,5 +1,6 @@
 const form = document.getElementById('login-form');
 const messageEl = document.getElementById('message');
+const submitBtn = form.querySelector('button[type="submit"]');
 
 form.addEventListener('submit', async (e) => {
   e.preventDefault();
@@ -8,6 +9,9 @@ form.addEventListener('submit', async (e) => {
 
   const identifier = document.getElementById('identifier').value.trim();
   const password = document.getElementById('password').value;
+
+  submitBtn.disabled = true;
+  submitBtn.textContent = 'Logging in…';
 
   try {
     const data = await apiFetch('/auth/login', {
@@ -33,5 +37,7 @@ form.addEventListener('submit', async (e) => {
     }
     messageEl.textContent = err.message;
     messageEl.className = 'message error';
+    submitBtn.disabled = false;
+    submitBtn.textContent = 'Log in';
   }
 });

@@ -88,10 +88,12 @@ button {
   font-size: 1rem;
   font-weight: 600;
   cursor: pointer;
+  transition: background 0.1s ease, transform 0.1s ease;
 }
 
 button:hover { background: #1d4ed8; }
-button:disabled { background: #334155; cursor: not-allowed; }
+button:active { transform: scale(0.98); }
+button:disabled { background: #334155; cursor: not-allowed; transform: none; }
 
 .message {
   margin-top: 16px;
