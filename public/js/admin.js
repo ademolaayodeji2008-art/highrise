@@ -49,10 +49,10 @@ async function refreshPending() {
     pendingBody.innerHTML = data.staff
       .map(
         (s) => `<tr>
-          <td>${s.name}</td>
-          <td>${s.email}</td>
-          <td>${s.phone}</td>
-          <td>
+          <td data-label="Name">${s.name}</td>
+          <td data-label="Email">${s.email}</td>
+          <td data-label="Phone">${s.phone}</td>
+          <td data-label="Action">
             <button data-approve="${s._id}" style="width: auto; margin: 0 8px 0 0; padding: 6px 12px;">Approve</button>
             <button data-reject="${s._id}" style="width: auto; margin: 0; padding: 6px 12px; background: #7f1d1d;">Reject</button>
           </td>
@@ -100,11 +100,11 @@ async function refreshAttendance() {
         const checkIn = r.checkInTime ? new Date(r.checkInTime).toLocaleTimeString() : '-';
         const checkOut = r.checkOutTime ? new Date(r.checkOutTime).toLocaleTimeString() : '-';
         return `<tr>
-          <td>${staff.name || 'Unknown'}</td>
-          <td>${staff.email || '-'}</td>
-          <td>${checkIn}</td>
-          <td>${checkOut}</td>
-          <td>${statusBadge(r.status)}</td>
+          <td data-label="Name">${staff.name || 'Unknown'}</td>
+          <td data-label="Email">${staff.email || '-'}</td>
+          <td data-label="Check-in">${checkIn}</td>
+          <td data-label="Check-out">${checkOut}</td>
+          <td data-label="Status">${statusBadge(r.status)}</td>
         </tr>`;
       })
       .join('');

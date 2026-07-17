@@ -18,11 +18,11 @@ async function loadStaff() {
     staffBody.innerHTML = data.staff
       .map(
         (s) => `<tr>
-          <td>${s.name}</td>
-          <td>${s.email}</td>
-          <td>${s.phone}</td>
-          <td>${s.role}</td>
-          <td>
+          <td data-label="Name">${s.name}</td>
+          <td data-label="Email">${s.email}</td>
+          <td data-label="Phone">${s.phone}</td>
+          <td data-label="Role">${s.role}</td>
+          <td data-label="Action">
             <button data-reset="${s._id}" data-name="${s.name}" style="width: auto; margin: 0; padding: 6px 12px; background: #334155;">Reset Password</button>
           </td>
         </tr>`

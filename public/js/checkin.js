@@ -1,6 +1,7 @@
 const headingEl = document.getElementById('heading');
 const messageEl = document.getElementById('message');
 const checkoutBtn = document.getElementById('checkout-btn');
+const retryBtn = document.getElementById('retry-btn');
 
 function showMessage(text, type) {
   messageEl.textContent = text;
@@ -117,6 +118,8 @@ function getPosition() {
 }
 
 async function runCheckin() {
+  retryBtn.style.display = 'none';
+
   let coords;
   try {
     showMessage('Getting your location…', 'info');
@@ -124,6 +127,7 @@ async function runCheckin() {
   } catch (err) {
     headingEl.textContent = 'Check-in failed';
     showMessage(err.message, 'error');
+    retryBtn.style.display = 'block';
     await refreshCheckoutButton();
     return;
   }
@@ -144,12 +148,15 @@ async function runCheckin() {
     } else {
       headingEl.textContent = 'Check-in failed';
       showMessage(err.message, 'error');
+      retryBtn.style.display = 'block';
       // Even though this scan failed (e.g. a stale/regenerated QR), the staff
       // may already be checked in from earlier — still offer checkout if so.
       await refreshCheckoutButton();
     }
   }
 }
+
+retryBtn.addEventListener('click', runCheckin);
 
 checkoutBtn.addEventListener('click', async () => {
   checkoutBtn.disabled = true;

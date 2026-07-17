@@ -32,11 +32,11 @@ async function loadSummary() {
     summaryBody.innerHTML = data.summary
       .map(
         (s) => `<tr>
-          <td>${s.name}</td>
-          <td>${s.email}</td>
-          <td>${s.presentCount}</td>
-          <td>${s.lateCount}</td>
-          <td>${s.absentCount}</td>
+          <td data-label="Name">${s.name}</td>
+          <td data-label="Email">${s.email}</td>
+          <td data-label="Present">${s.presentCount}</td>
+          <td data-label="Late">${s.lateCount}</td>
+          <td data-label="Absent">${s.absentCount}</td>
         </tr>`
       )
       .join('');

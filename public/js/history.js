@@ -40,12 +40,12 @@ async function loadHistory() {
         const checkIn = r.checkInTime ? new Date(r.checkInTime).toLocaleTimeString() : '-';
         const checkOut = r.checkOutTime ? new Date(r.checkOutTime).toLocaleTimeString() : '-';
         return `<tr>
-          <td>${r.date}</td>
-          <td>${staff.name || 'Unknown'}</td>
-          <td>${staff.email || '-'}</td>
-          <td>${checkIn}</td>
-          <td>${checkOut}</td>
-          <td>${statusBadge(r.status)}</td>
+          <td data-label="Date">${r.date}</td>
+          <td data-label="Name">${staff.name || 'Unknown'}</td>
+          <td data-label="Email">${staff.email || '-'}</td>
+          <td data-label="Check-in">${checkIn}</td>
+          <td data-label="Check-out">${checkOut}</td>
+          <td data-label="Status">${statusBadge(r.status)}</td>
         </tr>`;
       })
       .join('');

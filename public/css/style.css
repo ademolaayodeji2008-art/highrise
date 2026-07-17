@@ -184,6 +184,66 @@ th { color: #94a3b8; font-weight: 600; }
   }
 }
 
+/* Below this width, tables render as stacked cards (one per row) instead of
+   scrolling horizontally — each cell's column header becomes an inline label. */
+@media (max-width: 640px) {
+  .table-scroll {
+    overflow-x: visible;
+    background: transparent;
+    border-radius: 0;
+  }
+
+  .table-scroll table {
+    min-width: 0;
+  }
+
+  .table-scroll thead {
+    display: none;
+  }
+
+  .table-scroll table,
+  .table-scroll tbody,
+  .table-scroll tr,
+  .table-scroll td {
+    display: block;
+    width: 100%;
+  }
+
+  .table-scroll tr {
+    background: #1e293b;
+    border-radius: 12px;
+    padding: 4px 16px;
+    margin-bottom: 12px;
+  }
+
+  .table-scroll td {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 0;
+    border-bottom: 1px solid #334155;
+    text-align: right;
+  }
+
+  .table-scroll td:last-child {
+    border-bottom: none;
+  }
+
+  .table-scroll td::before {
+    content: attr(data-label);
+    font-weight: 600;
+    color: #94a3b8;
+    text-align: left;
+  }
+
+  /* A cell with no data-label (shouldn't happen once JS is updated, but
+     keeps a lone value from being misread as unlabeled) collapses cleanly */
+  .table-scroll td:empty {
+    display: none;
+  }
+}
+
 .link-btn {
   background: none;
   border: none;
