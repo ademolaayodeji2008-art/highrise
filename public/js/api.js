@@ -39,6 +39,15 @@ async function apiFetch(path, options = {}) {
   const res = await fetch(`/api${path}`, { ...options, headers });
   const data = await res.json().catch(() => ({}));
   if (!res.ok) {
+    // A 401 on a request that carried a token means the session itself is
+    // stale (expired/invalid JWT) rather than a one-off error to display
+    // inline — send the user back to log in instead of leaving error text
+    // scattered across the page.
+    if (res.status === 401 && token) {
+      Auth.logout();
+      const next = encodeURIComponent(window.location.pathname.split('/').pop() + window.location.search);
+      window.location.href = `login.html?next=${next}`;
+    }
     const err = new Error(data.message || 'Request failed');
     err.status = res.status;
     err.code = data.code;

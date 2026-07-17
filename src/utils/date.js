@@ -1,18 +1,40 @@
-function pad(n) {
-  return String(n).padStart(2, '0');
+// The server process's own local time is unreliable across environments —
+// it's West Africa Time in local dev (inherits the machine's timezone) but
+// UTC on Render. Every date/time decision must instead be computed against
+// the office's actual timezone, set via TIMEZONE in .env.
+const TIMEZONE = process.env.TIMEZONE || 'Africa/Lagos';
+
+function partsInZone(date) {
+  const parts = new Intl.DateTimeFormat('en-US', {
+    timeZone: TIMEZONE,
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: false
+  }).formatToParts(date);
+  const map = Object.fromEntries(parts.map((p) => [p.type, p.value]));
+  return {
+    year: map.year,
+    month: map.month,
+    day: map.day,
+    hour: Number(map.hour) % 24, // hour12:false can render midnight as "24" in some ICU versions
+    minute: Number(map.minute)
+  };
 }
 
-// "YYYY-MM-DD" in local (server) time
+// "YYYY-MM-DD" for `date` as seen in the office's timezone
 function todayString(date = new Date()) {
-  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
+  const { year, month, day } = partsInZone(date);
+  return `${year}-${month}-${day}`;
 }
 
-// cutoff like "09:00" -> true if `date`'s local time is after that cutoff
+// cutoff like "09:00" -> true if `date`'s time in the office's timezone is after that cutoff
 function isAfterCutoff(date, cutoff) {
   const [cutHour, cutMin] = cutoff.split(':').map(Number);
-  const cutoffDate = new Date(date);
-  cutoffDate.setHours(cutHour, cutMin, 0, 0);
-  return date.getTime() > cutoffDate.getTime();
+  const { hour, minute } = partsInZone(date);
+  return hour > cutHour || (hour === cutHour && minute > cutMin);
 }
 
 // Weekday (Mon-Fri) date strings between fromStr and toStr (inclusive),
