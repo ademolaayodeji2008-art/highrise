@@ -125,7 +125,8 @@ async function refreshAttendance() {
   }
 }
 
-loadQr();
+loadQr('checkin');
+loadQr('checkout');
 refreshAttendance();
 refreshPending();
 setInterval(refreshAttendance, 15000);
