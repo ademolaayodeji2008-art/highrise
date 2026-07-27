@@ -6,36 +6,48 @@ document.getElementById('logout-btn').addEventListener('click', () => {
   window.location.href = 'login.html';
 });
 
-const qrImage = document.getElementById('qr-image');
-const qrStatusEl = document.getElementById('qr-status');
-const qrLinkEl = document.getElementById('qr-link');
 const attendanceBody = document.getElementById('attendance-body');
-const regenerateBtn = document.getElementById('regenerate-btn');
 
-async function loadQr() {
+function qrElements(type) {
+  return {
+    image: document.getElementById(`qr-image-${type}`),
+    status: document.getElementById(`qr-status-${type}`),
+    link: document.getElementById(`qr-link-${type}`),
+    regenerateBtn: document.getElementById(`regenerate-btn-${type}`)
+  };
+}
+
+async function loadQr(type) {
+  const { image, status, link } = qrElements(type);
   try {
-    const data = await apiFetch('/qr/current');
-    qrImage.src = data.qrImageUrl;
-    qrLinkEl.textContent = data.url;
-    qrStatusEl.textContent = 'Static QR — stays the same until regenerated';
+    const data = await apiFetch(`/qr/current?type=${type}`);
+    image.src = data.qrImageUrl;
+    link.textContent = data.url;
+    status.textContent = 'Static QR — stays the same until regenerated';
   } catch (err) {
-    qrStatusEl.textContent = err.message;
+    status.textContent = err.message;
   }
 }
 
-regenerateBtn.addEventListener('click', async () => {
-  regenerateBtn.disabled = true;
-  try {
-    const data = await apiFetch('/qr/regenerate', { method: 'POST' });
-    qrImage.src = data.qrImageUrl;
-    qrLinkEl.textContent = data.url;
-    qrStatusEl.textContent = 'QR regenerated — old copies/screenshots no longer work';
-  } catch (err) {
-    qrStatusEl.textContent = err.message;
-  } finally {
-    regenerateBtn.disabled = false;
-  }
-});
+function setupRegenerate(type) {
+  const { image, status, link, regenerateBtn } = qrElements(type);
+  regenerateBtn.addEventListener('click', async () => {
+    regenerateBtn.disabled = true;
+    try {
+      const data = await apiFetch(`/qr/regenerate?type=${type}`, { method: 'POST' });
+      image.src = data.qrImageUrl;
+      link.textContent = data.url;
+      status.textContent = 'QR regenerated — old copies/screenshots no longer work';
+    } catch (err) {
+      status.textContent = err.message;
+    } finally {
+      regenerateBtn.disabled = false;
+    }
+  });
+}
+
+setupRegenerate('checkin');
+setupRegenerate('checkout');
 
 const pendingBody = document.getElementById('pending-body');
 

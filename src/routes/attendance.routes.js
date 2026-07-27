@@ -16,9 +16,9 @@ router.post('/checkin', requireAuth, asyncHandler(async (req, res) => {
   }
 
   try {
-    await verifyQrToken(qrToken);
+    await verifyQrToken(qrToken, 'checkin');
   } catch (err) {
-    return res.status(400).json({ message: 'Invalid QR code' });
+    return res.status(400).json({ message: err.message || 'Invalid QR code' });
   }
 
   if (typeof lat !== 'number' || typeof lng !== 'number') {
@@ -76,6 +76,32 @@ router.post('/checkin', requireAuth, asyncHandler(async (req, res) => {
 }));
 
 router.post('/checkout', requireAuth, asyncHandler(async (req, res) => {
+  const { qrToken, lat, lng } = req.body;
+  if (!qrToken) {
+    return res.status(400).json({ message: 'Missing QR token' });
+  }
+
+  try {
+    await verifyQrToken(qrToken, 'checkout');
+  } catch (err) {
+    return res.status(400).json({ message: err.message || 'Invalid QR code' });
+  }
+
+  if (typeof lat !== 'number' || typeof lng !== 'number') {
+    return res.status(400).json({ message: 'Location is required to check out — please allow location access' });
+  }
+
+  try {
+    const { withinRadius, distance, maxDistance } = isWithinOfficeRadius(lat, lng);
+    if (!withinRadius) {
+      return res.status(403).json({
+        message: `You're too far from the office to check out (${Math.round(distance)}m away, must be within ${maxDistance}m)`
+      });
+    }
+  } catch (err) {
+    return res.status(500).json({ message: 'Office location is not configured' });
+  }
+
   const date = todayString();
   const record = await Attendance.findOne({ staffId: req.staff._id, date });
   if (!record) {

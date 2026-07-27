@@ -20,13 +20,25 @@
       </div>
     </div>
 
-    <div class="qr-panel">
-      <img id="qr-image" alt="Scan to check in" />
-      <div class="countdown" id="qr-status"></div>
-      <div class="countdown" id="qr-link" style="word-break: break-all; font-size: 0.75rem;"></div>
-      <button id="regenerate-btn" style="max-width: 260px; margin: 16px auto 0;">
-        Regenerate QR (if leaked)
-      </button>
+    <div style="display: flex; gap: 24px; flex-wrap: wrap; justify-content: center;">
+      <div class="qr-panel">
+        <h3>Check-in</h3>
+        <img id="qr-image-checkin" alt="Scan to check in" />
+        <div class="countdown" id="qr-status-checkin"></div>
+        <div class="countdown" id="qr-link-checkin" style="word-break: break-all; font-size: 0.75rem;"></div>
+        <button id="regenerate-btn-checkin" style="max-width: 260px; margin: 16px auto 0;">
+          Regenerate QR (if leaked)
+        </button>
+      </div>
+      <div class="qr-panel">
+        <h3>Check-out</h3>
+        <img id="qr-image-checkout" alt="Scan to check out" />
+        <div class="countdown" id="qr-status-checkout"></div>
+        <div class="countdown" id="qr-link-checkout" style="word-break: break-all; font-size: 0.75rem;"></div>
+        <button id="regenerate-btn-checkout" style="max-width: 260px; margin: 16px auto 0;">
+          Regenerate QR (if leaked)
+        </button>
+      </div>
     </div>
 
     <h2>Pending Staff Approvals</h2>

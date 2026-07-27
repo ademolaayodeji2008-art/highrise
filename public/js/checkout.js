@@ -1,0 +1,149 @@
+const headingEl = document.getElementById('heading');
+const messageEl = document.getElementById('message');
+const retryBtn = document.getElementById('retry-btn');
+
+function showMessage(text, type) {
+  messageEl.textContent = text;
+  messageEl.className = `message ${type}`;
+}
+
+const QUEUE_KEY = 'qr_attendance_pending_checkouts';
+
+function loadQueue() {
+  try {
+    return JSON.parse(localStorage.getItem(QUEUE_KEY)) || [];
+  } catch (e) {
+    return [];
+  }
+}
+
+function saveQueue(queue) {
+  localStorage.setItem(QUEUE_KEY, JSON.stringify(queue));
+}
+
+function queueCheckout(entry) {
+  const queue = loadQueue();
+  queue.push({ ...entry, queuedAt: Date.now() });
+  saveQueue(queue);
+}
+
+// Retries queued check-outs that failed to reach the server due to no connection.
+// A queued item is dropped (not retried forever) if the server responds with a
+// real rejection (e.g. the QR was regenerated meanwhile) — only network failure keeps it queued.
+async function flushQueue() {
+  const queue = loadQueue();
+  if (!queue.length || !Auth.token()) return;
+
+  let successCount = 0;
+  let i = 0;
+  for (; i < queue.length; i++) {
+    const entry = queue[i];
+    try {
+      await apiFetch('/attendance/checkout', {
+        method: 'POST',
+        body: JSON.stringify({ qrToken: entry.qrToken, lat: entry.lat, lng: entry.lng })
+      });
+      successCount += 1;
+    } catch (err) {
+      if (err.status === undefined) {
+        break; // still offline — keep this item and the rest for later
+      }
+      // permanent failure — drop this one, keep going
+    }
+  }
+  saveQueue(queue.slice(i));
+  if (successCount > 0) {
+    showMessage(`${successCount} queued check-out(s) submitted successfully.`, 'success');
+  }
+}
+
+const params = new URLSearchParams(window.location.search);
+const qrToken = params.get('token');
+
+if (!Auth.token()) {
+  // Not logged in — send to login, then bounce straight back here (with the token, if any).
+  const returnTo = encodeURIComponent(qrToken ? `checkout.html?token=${qrToken}` : 'checkout.html');
+  window.location.href = `login.html?next=${returnTo}`;
+} else {
+  flushQueue();
+  if (qrToken) {
+    runCheckout();
+  } else {
+    showTodayStatus();
+  }
+}
+window.addEventListener('online', flushQueue);
+
+async function showTodayStatus() {
+  headingEl.textContent = 'Your attendance today';
+  let attendance;
+  try {
+    const data = await apiFetch('/attendance/me/today');
+    attendance = data.attendance;
+  } catch (err) {
+    attendance = null;
+  }
+  if (!attendance) {
+    showMessage("You haven't checked in yet today — scan the check-in QR code at the entrance first.", 'info');
+  } else if (attendance.checkOutTime) {
+    showMessage(
+      `Checked in at ${new Date(attendance.checkInTime).toLocaleTimeString()}, checked out at ${new Date(attendance.checkOutTime).toLocaleTimeString()}.`,
+      'success'
+    );
+  } else {
+    showMessage(
+      `Checked in at ${new Date(attendance.checkInTime).toLocaleTimeString()}. Scan the check-out QR code at the exit when you leave.`,
+      'info'
+    );
+  }
+}
+
+function getPosition() {
+  return new Promise((resolve, reject) => {
+    if (!navigator.geolocation) {
+      reject(new Error('Location is not supported on this device'));
+      return;
+    }
+    navigator.geolocation.getCurrentPosition(
+      (position) => resolve(position.coords),
+      () => reject(new Error('Location access denied — please allow location and try again')),
+      { enableHighAccuracy: true, timeout: 10000 }
+    );
+  });
+}
+
+async function runCheckout() {
+  retryBtn.style.display = 'none';
+
+  let coords;
+  try {
+    showMessage('Getting your location…', 'info');
+    coords = await getPosition();
+  } catch (err) {
+    headingEl.textContent = 'Check-out failed';
+    showMessage(err.message, 'error');
+    retryBtn.style.display = 'block';
+    return;
+  }
+
+  try {
+    const data = await apiFetch('/attendance/checkout', {
+      method: 'POST',
+      body: JSON.stringify({ qrToken, lat: coords.latitude, lng: coords.longitude })
+    });
+    headingEl.textContent = "You're checked out";
+    showMessage(data.message, 'success');
+  } catch (err) {
+    if (err.status === undefined) {
+      queueCheckout({ qrToken, lat: coords.latitude, lng: coords.longitude });
+      headingEl.textContent = "You're offline";
+      showMessage("No connection right now — we'll check you out automatically once you're back online.", 'info');
+    } else {
+      headingEl.textContent = 'Check-out failed';
+      showMessage(err.message, 'error');
+      retryBtn.style.display = 'block';
+    }
+  }
+}
+
+retryBtn.addEventListener('click', runCheckout);

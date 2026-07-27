@@ -1,6 +1,5 @@
 const headingEl = document.getElementById('heading');
 const messageEl = document.getElementById('message');
-const checkoutBtn = document.getElementById('checkout-btn');
 const retryBtn = document.getElementById('retry-btn');
 
 function showMessage(text, type) {
@@ -58,19 +57,6 @@ async function flushQueue() {
   }
 }
 
-// Checkout availability is decided by actual server state, not by whether a
-// fresh scan just succeeded — so a stale/invalid QR in a bookmarked link
-// doesn't hide checkout for someone who's genuinely still checked in.
-async function refreshCheckoutButton() {
-  try {
-    const data = await apiFetch('/attendance/me/today');
-    checkoutBtn.style.display = data.attendance && !data.attendance.checkOutTime ? 'block' : 'none';
-    return data.attendance;
-  } catch (err) {
-    return null;
-  }
-}
-
 const params = new URLSearchParams(window.location.search);
 const qrToken = params.get('token');
 
@@ -90,16 +76,25 @@ window.addEventListener('online', flushQueue);
 
 async function showTodayStatus() {
   headingEl.textContent = 'Your attendance today';
-  const attendance = await refreshCheckoutButton();
+  let attendance;
+  try {
+    const data = await apiFetch('/attendance/me/today');
+    attendance = data.attendance;
+  } catch (err) {
+    attendance = null;
+  }
   if (!attendance) {
-    showMessage("You haven't checked in yet today — scan the QR code at the entrance.", 'info');
+    showMessage("You haven't checked in yet today — scan the check-in QR code at the entrance.", 'info');
   } else if (attendance.checkOutTime) {
     showMessage(
       `Checked in at ${new Date(attendance.checkInTime).toLocaleTimeString()}, checked out at ${new Date(attendance.checkOutTime).toLocaleTimeString()}.`,
       'success'
     );
   } else {
-    showMessage(`Checked in at ${new Date(attendance.checkInTime).toLocaleTimeString()}.`, 'success');
+    showMessage(
+      `Checked in at ${new Date(attendance.checkInTime).toLocaleTimeString()}. Scan the check-out QR code at the exit when you leave.`,
+      'success'
+    );
   }
 }
 
@@ -128,7 +123,6 @@ async function runCheckin() {
     headingEl.textContent = 'Check-in failed';
     showMessage(err.message, 'error');
     retryBtn.style.display = 'block';
-    await refreshCheckoutButton();
     return;
   }
 
@@ -137,9 +131,8 @@ async function runCheckin() {
       method: 'POST',
       body: JSON.stringify({ qrToken, lat: coords.latitude, lng: coords.longitude })
     });
-    headingEl.textContent = 'You\'re checked in';
+    headingEl.textContent = "You're checked in";
     showMessage(data.message, 'success');
-    checkoutBtn.style.display = data.attendance.checkOutTime ? 'none' : 'block';
   } catch (err) {
     if (err.status === undefined) {
       queueCheckin({ qrToken, lat: coords.latitude, lng: coords.longitude });
@@ -149,24 +142,8 @@ async function runCheckin() {
       headingEl.textContent = 'Check-in failed';
       showMessage(err.message, 'error');
       retryBtn.style.display = 'block';
-      // Even though this scan failed (e.g. a stale/regenerated QR), the staff
-      // may already be checked in from earlier — still offer checkout if so.
-      await refreshCheckoutButton();
     }
   }
 }
 
 retryBtn.addEventListener('click', runCheckin);
-
-checkoutBtn.addEventListener('click', async () => {
-  checkoutBtn.disabled = true;
-  try {
-    const data = await apiFetch('/attendance/checkout', { method: 'POST' });
-    headingEl.textContent = 'You\'re checked out';
-    showMessage(data.message, 'success');
-    checkoutBtn.style.display = 'none';
-  } catch (err) {
-    showMessage(err.message, 'error');
-    checkoutBtn.disabled = false;
-  }
-});
