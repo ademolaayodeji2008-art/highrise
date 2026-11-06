@@ -1,7 +1,7 @@
 {
-  "name": "qr-attendance",
+  "name": "highrise-healthcare-attendance",
   "version": "1.0.0",
-  "description": "QR-code based staff attendance system",
+  "description": "QR-code based staff attendance system for Highrise Health Care",
   "main": "server.js",
   "scripts": {
     "start": "nodemon server.js",

@@ -46,7 +46,7 @@ router.get('/me', requireAuth, (req, res) => {
 
 // Public: staff self-register. Account is inactive until an admin approves it.
 router.post('/signup', signupLimiter, asyncHandler(async (req, res) => {
-  const { name, email, phone, password } = req.body;
+  const { name, email, phone, password, staffType } = req.body;
   if (!name || !email || !phone || !password) {
     return res.status(400).json({ message: 'Name, email, phone and password are required' });
   }
@@ -58,13 +58,14 @@ router.post('/signup', signupLimiter, asyncHandler(async (req, res) => {
     return res.status(409).json({ message: 'An account with this email or phone already exists' });
   }
 
-  await Staff.create({ name, email, phone, password, role: 'staff', active: false });
+  const validType = staffType === 'support' ? 'support' : 'professional';
+  await Staff.create({ name, email, phone, password, role: 'staff', staffType: validType, active: false });
   res.status(201).json({ message: 'Account created — waiting for admin approval before you can log in' });
 }));
 
 // Admin-only: create a staff account directly (active immediately, no approval needed).
 router.post('/register', requireAuth, requireAdmin, asyncHandler(async (req, res) => {
-  const { name, email, phone, password, role } = req.body;
+  const { name, email, phone, password, role, staffType } = req.body;
   if (!name || !email || !phone || !password) {
     return res.status(400).json({ message: 'Name, email, phone and password are required' });
   }
@@ -76,16 +77,31 @@ router.post('/register', requireAuth, requireAdmin, asyncHandler(async (req, res
     return res.status(409).json({ message: 'An account with this email or phone already exists' });
   }
 
+  const validType = staffType === 'support' ? 'support' : 'professional';
   const staff = await Staff.create({
     name,
     email,
     phone,
     password,
     role: role === 'admin' ? 'admin' : 'staff',
+    staffType: validType,
     active: true
   });
 
   res.status(201).json({ staff: staff.toSafeObject() });
+}));
+
+// Admin-only: update a staff member's staff type (support ↔ professional).
+router.patch('/:id/staff-type', requireAuth, requireAdmin, asyncHandler(async (req, res) => {
+  const { staffType } = req.body;
+  if (!['support', 'professional'].includes(staffType)) {
+    return res.status(400).json({ message: 'staffType must be "support" or "professional"' });
+  }
+  const staff = await Staff.findByIdAndUpdate(req.params.id, { staffType }, { new: true });
+  if (!staff) {
+    return res.status(404).json({ message: 'Staff account not found' });
+  }
+  res.json({ staff: staff.toSafeObject() });
 }));
 
 // Admin-only: list all active staff (for the "manage staff" screen).

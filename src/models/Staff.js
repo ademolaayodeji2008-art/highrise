@@ -8,6 +8,10 @@ const staffSchema = new mongoose.Schema(
     phone: { type: String, required: true, unique: true, trim: true },
     password: { type: String, required: true },
     role: { type: String, enum: ['staff', 'admin'], default: 'staff' },
+    // Two staff categories with different resumption times:
+    //   support      → late after 08:00 (LATE_CUTOFF_SUPPORT)
+    //   professional → late after 09:00 (LATE_CUTOFF_PROFESSIONAL)
+    staffType: { type: String, enum: ['support', 'professional'], default: 'professional' },
     // Self-registered accounts start inactive until an admin approves them.
     // Accounts an admin creates directly are active immediately (see auth.routes.js).
     active: { type: Boolean, default: true }
@@ -32,6 +36,7 @@ staffSchema.methods.toSafeObject = function toSafeObject() {
     email: this.email,
     phone: this.phone,
     role: this.role,
+    staffType: this.staffType,
     active: this.active
   };
 };

@@ -37,6 +37,16 @@ function isAfterCutoff(date, cutoff) {
   return hour > cutHour || (hour === cutHour && minute > cutMin);
 }
 
+// Each staff category has its own resumption deadline:
+//   support      → LATE_CUTOFF_SUPPORT      (default 08:00)
+//   professional → LATE_CUTOFF_PROFESSIONAL  (default 09:00)
+function getCutoffForStaffType(staffType) {
+  if (staffType === 'support') {
+    return process.env.LATE_CUTOFF_SUPPORT || '08:00';
+  }
+  return process.env.LATE_CUTOFF_PROFESSIONAL || '09:00';
+}
+
 // Weekday (Mon-Fri) date strings between fromStr and toStr (inclusive),
 // capped at today — future days can't yet count as absent.
 function workingDaysBetween(fromStr, toStrRaw) {
@@ -56,4 +66,4 @@ function workingDaysBetween(fromStr, toStrRaw) {
   return dates;
 }
 
-module.exports = { todayString, isAfterCutoff, workingDaysBetween };
+module.exports = { todayString, isAfterCutoff, workingDaysBetween, getCutoffForStaffType };

@@ -3,7 +3,7 @@ const Attendance = require('../models/Attendance');
 const Staff = require('../models/Staff');
 const { requireAuth, requireAdmin } = require('../middleware/auth');
 const { verifyQrToken } = require('../utils/qrToken');
-const { todayString, isAfterCutoff, workingDaysBetween } = require('../utils/date');
+const { todayString, isAfterCutoff, workingDaysBetween, getCutoffForStaffType } = require('../utils/date');
 const { isWithinOfficeRadius } = require('../utils/geo');
 const asyncHandler = require('../utils/asyncHandler');
 
@@ -47,7 +47,7 @@ router.post('/checkin', requireAuth, asyncHandler(async (req, res) => {
     });
   }
 
-  const cutoff = process.env.LATE_CUTOFF || '09:00';
+  const cutoff = getCutoffForStaffType(req.staff.staffType);
   const status = isAfterCutoff(now, cutoff) ? 'late' : 'present';
 
   try {
@@ -128,7 +128,7 @@ router.get('/me/today', requireAuth, asyncHandler(async (req, res) => {
 
 router.get('/today', requireAuth, requireAdmin, asyncHandler(async (req, res) => {
   const date = todayString();
-  const records = await Attendance.find({ date }).populate('staffId', 'name email role');
+  const records = await Attendance.find({ date }).populate('staffId', 'name email role staffType');
   res.json({ date, records });
 }));
 
@@ -142,7 +142,7 @@ router.get('/report', requireAuth, requireAdmin, asyncHandler(async (req, res) =
     if (to) filter.date.$lte = to;
   }
   const records = await Attendance.find(filter)
-    .populate('staffId', 'name email role')
+    .populate('staffId', 'name email role staffType')
     .sort({ date: -1 });
   res.json({ records });
 }));
@@ -158,7 +158,7 @@ router.get('/summary', requireAuth, requireAdmin, asyncHandler(async (req, res) 
   }
 
   const workingDays = workingDaysBetween(from, to);
-  const staffList = await Staff.find({ active: true }).select('name email');
+  const staffList = await Staff.find({ active: true }).select('name email staffType');
   const staffIds = staffList.map((s) => s._id);
 
   const records = await Attendance.find({
@@ -185,6 +185,7 @@ router.get('/summary', requireAuth, requireAdmin, asyncHandler(async (req, res) 
       staffId: staff._id,
       name: staff.name,
       email: staff.email,
+      staffType: staff.staffType,
       presentCount,
       lateCount,
       absentCount
@@ -192,6 +193,26 @@ router.get('/summary', requireAuth, requireAdmin, asyncHandler(async (req, res) 
   });
 
   res.json({ from, to, totalWorkingDays: workingDays.length, summary });
+}));
+
+// Admin-only: delete all attendance records for a given year (e.g. to free up
+// storage once a previous year is no longer needed). The current year is
+// protected — it can't be cleared accidentally.
+router.delete('/year/:year', requireAuth, requireAdmin, asyncHandler(async (req, res) => {
+  const { year } = req.params;
+  if (!/^\d{4}$/.test(year)) {
+    return res.status(400).json({ message: 'Invalid year format' });
+  }
+
+  const currentYear = todayString().slice(0, 4);
+  if (year === currentYear) {
+    return res.status(400).json({ message: "Cannot clear the current year's data" });
+  }
+
+  const result = await Attendance.deleteMany({
+    date: { $gte: `${year}-01-01`, $lte: `${year}-12-31` }
+  });
+  res.json({ message: `Cleared ${result.deletedCount} attendance record(s) for ${year}`, deletedCount: result.deletedCount });
 }));
 
 module.exports = router;

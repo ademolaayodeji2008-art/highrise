@@ -16,7 +16,7 @@ function toDateString(date) {
 }
 
 async function loadSummary() {
-  summaryBody.innerHTML = '<tr><td colspan="5">Loading...</td></tr>';
+  summaryBody.innerHTML = '<tr><td colspan="6">Loading...</td></tr>';
   rangeInfoEl.textContent = '';
 
   const params = new URLSearchParams({ from: fromInput.value, to: toInput.value });
@@ -26,7 +26,7 @@ async function loadSummary() {
     rangeInfoEl.textContent = `${data.totalWorkingDays} working day(s) (Mon-Fri) in this range`;
 
     if (!data.summary.length) {
-      summaryBody.innerHTML = '<tr><td colspan="5">No active staff found.</td></tr>';
+      summaryBody.innerHTML = '<tr><td colspan="6">No active staff found.</td></tr>';
       return;
     }
     summaryBody.innerHTML = data.summary
@@ -34,6 +34,7 @@ async function loadSummary() {
         (s) => `<tr>
           <td data-label="Name">${s.name}</td>
           <td data-label="Email">${s.email}</td>
+          <td data-label="Type">${s.staffType === 'support' ? 'Support' : 'Professional'}</td>
           <td data-label="Present">${s.presentCount}</td>
           <td data-label="Late">${s.lateCount}</td>
           <td data-label="Absent">${s.absentCount}</td>
@@ -41,7 +42,7 @@ async function loadSummary() {
       )
       .join('');
   } catch (err) {
-    summaryBody.innerHTML = `<tr><td colspan="5">${err.message}</td></tr>`;
+    summaryBody.innerHTML = `<tr><td colspan="6">${err.message}</td></tr>`;
   }
 }
 

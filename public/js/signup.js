@@ -20,6 +20,7 @@ form.addEventListener('submit', async (e) => {
   const name = document.getElementById('name').value.trim();
   const email = document.getElementById('email').value.trim();
   const phone = document.getElementById('phone').value.trim();
+  const staffType = document.getElementById('staffType').value;
   const password = document.getElementById('password').value;
 
   submitBtn.disabled = true;
@@ -28,7 +29,7 @@ form.addEventListener('submit', async (e) => {
   try {
     const data = await apiFetch('/auth/signup', {
       method: 'POST',
-      body: JSON.stringify({ name, email, phone, password })
+      body: JSON.stringify({ name, email, phone, staffType, password })
     });
     messageEl.textContent = data.message;
     messageEl.className = 'message success';

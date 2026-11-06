@@ -1,8 +1,10 @@
-# QR Staff Attendance System — Build Plan
+# Highrise Health Care — QR Staff Attendance System
 
 ## 1. Overview
 
-A system where staff scan a QR code (displayed at the office entrance) to automatically mark their attendance for the day. Built on Node.js/Express/MongoDB.
+A system where staff scan a QR code (displayed at the office entrance) to automatically mark their attendance for the day. Built on Node.js/Express/MongoDB for Highrise Health Care.
+
+**Staff types:** The system supports two categories with different resumption deadlines — **support staff** (late after 08:00) and **professional staff** (late after 09:00).
 
 **Core decision:** A **static QR code** (does not rotate) that encodes a check-in link. Screenshot abuse is prevented by a **geolocation check** — staff must be within a configured radius of the office when they check in — plus requiring staff to be logged into their own account. An admin can manually **regenerate** the QR (invalidating the old one) if a screenshot leaks.
 
@@ -31,7 +33,7 @@ A system where staff scan a QR code (displayed at the office entrance) to automa
    - QR token signature is valid **and** matches the currently-live token (not a stale/regenerated one)
    - GPS coordinates are within `MAX_DISTANCE_METERS` of `OFFICE_LAT`/`OFFICE_LNG`
    - Staff hasn't already checked in today (unique index on `staffId + date`)
-6. Backend creates the attendance record, marking `status: 'late'` if past `LATE_CUTOFF`.
+6. Backend creates the attendance record, marking `status: 'late'` if past the staff member's cutoff (08:00 for support, 09:00 for professional).
 7. Staff sees a success message ("Checked in at 8:42 AM") or a specific error (too far away, already checked in, pending approval, etc).
 
 A manual in-app scanner (`scan.html`, camera-based via `html5-qrcode`, with a manual code-paste fallback) remains available as a secondary option.
@@ -48,10 +50,13 @@ const staffSchema = new mongoose.Schema({
   phone: { type: String, required: true, unique: true, trim: true },
   password: String, // hashed with bcrypt
   role: { type: String, enum: ['staff', 'admin'], default: 'staff' },
+  staffType: { type: String, enum: ['support', 'professional'], default: 'professional' },
   active: { type: Boolean, default: true } // false = pending admin approval
 });
 ```
 Login accepts **either email or phone** as the identifier.
+
+Each staff member is categorised as either **support** (late after 08:00) or **professional** (late after 09:00). The cutoff is looked up per staff type at check-in time from `LATE_CUTOFF_SUPPORT` / `LATE_CUTOFF_PROFESSIONAL` in `.env`.
 
 ### Attendance
 ```js
@@ -91,6 +96,7 @@ There's no manual account-creation step required — staff self-register:
 | `/api/auth/login` | POST | Login by email or phone, returns JWT |
 | `/api/auth/me` | GET | Current staff profile |
 | `/api/auth/register` | POST | Admin creates a staff/admin account directly (active immediately) |
+| `/api/auth/:id/staff-type` | PATCH | Admin — change a staff member's type (support ↔ professional) |
 | `/api/auth/pending` | GET | Admin — list accounts awaiting approval |
 | `/api/auth/:id/approve` | POST | Admin — activate a pending account |
 | `/api/auth/:id` | DELETE | Admin — reject/remove a staff account |
@@ -101,6 +107,7 @@ There's no manual account-creation step required — staff self-register:
 | `/api/attendance/today` | GET | Admin — who has checked in today |
 | `/api/attendance/report` | GET | Admin — attendance history, filterable by `staffId`/`from`/`to` (powers `history.html`) |
 | `/api/attendance/summary` | GET | Admin — present/late/absent counts per active staff over `from`/`to` (weekdays only, powers `summary.html`) |
+| `/api/attendance/year/:year` | DELETE | Admin — delete all attendance records for a given previous year (current year protected) |
 
 ---
 
@@ -131,7 +138,7 @@ There's no manual account-creation step required — staff self-register:
 5. Check today's date — has this `staffId` already got a record for today?
    - If yes → return "Already checked in at [time]" (also backstopped by the DB's unique index in case of a race).
    - If no → create the record.
-6. Compare check-in time to `LATE_CUTOFF` (default 09:00) → set `status: 'late'` if applicable.
+6. Compare check-in time to the staff member's cutoff (`LATE_CUTOFF_SUPPORT` for support staff, `LATE_CUTOFF_PROFESSIONAL` for professional staff) → set `status: 'late'` if applicable.
 7. Return a success/error message to the staff's page.
 
 ---
@@ -156,6 +163,8 @@ All pages are mobile-responsive (tables scroll horizontally inside their own con
 
 - [x] **CSV export** — "Export CSV" button on `history.html`, generates the file client-side from the currently-filtered records
 - [x] **Late/absent auto-summary** — `GET /api/attendance/summary?from=&to=` (admin-only) computes present/late/absent counts per active staff member over a date range, counting only weekdays (Mon-Fri) up to today. Surfaced on `summary.html`, defaulting to the current calendar month, linked from `admin.html` and `history.html`.
+- [x] **Staff types** — each staff member is categorised as support (08:00 cutoff) or professional (09:00 cutoff). Self-signup includes a type selector; admins can create staff with a type and change it inline on the manage-staff screen.
+- [x] **Year-data clearing** — `DELETE /api/attendance/year/:year` (admin-only) deletes all attendance records for a given previous year to free up storage. The current year is protected. Surfaced on `admin.html` under "Data Management".
 - [x] **Checkout flow UI** — `checkin.html` shows a "Check out" button once checked in for the day; calls the existing `/api/attendance/checkout` route.
 - [x] **Offline queue** — if `checkin.html`'s check-in request fails due to no network connection (not a server rejection), it's queued in `localStorage` and retried automatically on the next page load or when the `online` browser event fires. A queued item is dropped (not retried forever) only if the server actively rejects it once reachable (e.g. the QR was regenerated in the meantime) — pure network failures keep it queued.
 - [ ] **Push notification** (FCM) — deliberately skipped. Staff already get an instant on-screen confirmation the moment they check in, and FCM requires a Firebase project + service account credentials that only the site owner can create. Revisit if a real use case comes up (e.g. nudging staff who haven't checked in by a certain time).

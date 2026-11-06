@@ -1,8 +1,6 @@
-# QR Staff Attendance System
+# Highrise Health Care — QR Staff Attendance System
 
 Staff check in for the day by scanning a static QR code displayed at the office entrance. Built with Node.js, Express, and MongoDB.
-
-See [Build-Plan.md](Build-Plan.md) for the full design and feature breakdown.
 
 ## How it works
 
@@ -15,9 +13,13 @@ See [Build-Plan.md](Build-Plan.md) for the full design and feature breakdown.
 ## Features
 
 - Static QR check-in with geolocation verification (screenshot-proof: an old code stops working once regenerated, and check-ins are rejected if too far from the office)
-- Staff self-registration, held for admin approval before the account can log in
+- **Two staff types with different resumption times:**
+  - **Support staff** — late after 08:00 (`LATE_CUTOFF_SUPPORT`)
+  - **Professional staff** — late after 09:00 (`LATE_CUTOFF_PROFESSIONAL`)
+- Staff self-registration with staff-type selection, held for admin approval before the account can log in
+- Admin can create staff directly with a specific type, or change a staff member's type at any time
 - Login by email or phone
-- Admin screen: live QR + regenerate button, pending-approval queue, today's attendance
+- Admin screen: live QR + regenerate button, pending-approval queue, today's attendance, **year-data clearing**
 - Attendance history (date-range filter + CSV export) and a present/late/absent summary report
 - Checkout flow, offline check-in queue (retries automatically once back online)
 - Rate-limited login/signup endpoints
@@ -40,7 +42,9 @@ npm run dev            # starts the server with nodemon
 | `JWT_SECRET` | Signs staff login tokens |
 | `QR_SECRET` | Signs the QR check-in token (keep separate from `JWT_SECRET`) |
 | `LOCATION_ID` | Label embedded in the QR token (useful for multi-branch setups) |
-| `LATE_CUTOFF` | 24h `HH:mm` — check-ins after this are marked `late` |
+| `LATE_CUTOFF_SUPPORT` | 24h `HH:mm` — support staff check-ins after this are marked `late` (default 08:00) |
+| `LATE_CUTOFF_PROFESSIONAL` | 24h `HH:mm` — professional staff check-ins after this are marked `late` (default 09:00) |
+| `TIMEZONE` | IANA timezone the office is in (decides cutoff comparison and midnight day-boundary) |
 | `OFFICE_LAT` / `OFFICE_LNG` | Office coordinates — right-click the location on Google Maps to get these |
 | `MAX_DISTANCE_METERS` | How far (meters) a check-in is allowed to be from the office |
 | `SEED_ADMIN_EMAIL` / `SEED_ADMIN_PASSWORD` / `SEED_ADMIN_PHONE` / `SEED_ADMIN_NAME` | Used only by `npm run seed:admin` to create the first admin account |

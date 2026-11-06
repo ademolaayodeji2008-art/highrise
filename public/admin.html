@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Attendance — Admin Screen</title>
+  <title>Highrise Health Care — Admin</title>
   <link rel="stylesheet" href="css/style.css" />
 </head>
 <body>
@@ -49,11 +49,12 @@
             <th>Name</th>
             <th>Email</th>
             <th>Phone</th>
+            <th>Staff Type</th>
             <th>Action</th>
           </tr>
         </thead>
         <tbody id="pending-body">
-          <tr><td colspan="4">Loading...</td></tr>
+          <tr><td colspan="5">Loading...</td></tr>
         </tbody>
       </table>
     </div>
@@ -65,15 +66,32 @@
           <tr>
             <th>Name</th>
             <th>Email</th>
+            <th>Type</th>
             <th>Check-in</th>
             <th>Check-out</th>
             <th>Status</th>
           </tr>
         </thead>
         <tbody id="attendance-body">
-          <tr><td colspan="5">Loading...</td></tr>
+          <tr><td colspan="6">Loading...</td></tr>
         </tbody>
       </table>
+    </div>
+
+    <h2>Data Management</h2>
+    <div class="qr-panel" style="text-align: left;">
+      <p style="color: #94a3b8; font-size: 0.9rem; margin-top: 0;">
+        Clear all attendance records for a previous year to free up storage.
+        This cannot be undone, and the current year is protected.
+      </p>
+      <form id="clear-year-form" style="display: flex; flex-wrap: wrap; gap: 16px; align-items: end;">
+        <div>
+          <label for="clear-year">Year to clear</label>
+          <input type="number" id="clear-year" min="2000" max="2099" style="width: auto;" />
+        </div>
+        <button type="submit" style="width: auto; margin-top: 0; padding: 10px 20px; background: #7f1d1d;">Clear year data</button>
+      </form>
+      <div id="clear-year-message" class="message" style="display: none;"></div>
     </div>
   </div>
 

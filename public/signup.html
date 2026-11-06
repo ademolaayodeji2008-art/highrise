@@ -4,12 +4,13 @@
   <meta charset="UTF-8" />
   <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Create Account</title>
+  <title>Highrise Health Care — Create Account</title>
   <link rel="stylesheet" href="css/style.css" />
 </head>
 <body>
   <div class="center-screen">
     <div class="card">
+      <div class="brand-label">Highrise Health Care</div>
       <h1>Create Staff Account</h1>
       <form id="signup-form">
         <label for="name">Full name</label>
@@ -20,6 +21,12 @@
 
         <label for="phone">Phone number</label>
         <input type="tel" id="phone" required autocomplete="tel" />
+
+        <label for="staffType">Staff type</label>
+        <select id="staffType">
+          <option value="professional">Professional staff (resume by 9:00 AM)</option>
+          <option value="support">Support staff (resume by 8:00 AM)</option>
+        </select>
 
         <label for="password">Password</label>
         <div class="password-field">
